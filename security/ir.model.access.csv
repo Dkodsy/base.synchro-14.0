@@ -5,3 +5,4 @@ base_synchro_obj_avoid,base.synchro.obj.avoid,model_base_synchro_obj_avoid,base.
 base_synchro_obj_line,base.synchro.obj.line,model_base_synchro_obj_line,base.group_system,1,1,1,1
 base_synchro_res_request,synchro.res.request,model_res_request,base.group_system,1,1,1,1
 base_synchro,base.synhro,model_base_synchro,base.group_system,1,1,1,1
+report_list, report.list,model_report_list,base.group_system,1,1,1,1

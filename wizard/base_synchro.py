@@ -51,7 +51,7 @@ class RPCProxy(object):
 
 class Report_list(models.Model):
     _name = "report.list"
-    field_list = []
+    message = fields.Char('Сообщение')
 
 
 class BaseSynchro(models.TransientModel):
@@ -194,6 +194,7 @@ class BaseSynchro(models.TransientModel):
             self, pool_src, pool_dest, obj_model,
             res_id, action, destination_inverted
     ):
+        message_obj = self.env['report.list']
         if not res_id:
             return False
         _logger.debug("Relation transform")
@@ -237,11 +238,11 @@ class BaseSynchro(models.TransientModel):
                 model '%s""",
                     obj_model,
                 )
-                self.report.field_list.append(
-                    """WARNING: Record "%s" on relation %s not/
+                new_message = message_obj.create({'message': """WARNING: Record "%s" on relation %s not/
                     found, set to null."""
-                    % (names, obj_model)
-                )
+                                                             % (names, obj_model)}
+                                                 )
+                self.report += new_message
         return result
 
     @api.model
@@ -297,6 +298,7 @@ class BaseSynchro(models.TransientModel):
     def upload_download(self):
         self.ensure_one()
         start_date = fields.Datetime.now()
+        message_obj = self.env['report.list']
         server = self.server_url
         for obj_rec in server.obj_ids:
             _logger.debug("Start synchro of %s", obj_rec.name)
@@ -311,17 +313,18 @@ class BaseSynchro(models.TransientModel):
         # Creating res.request for summary results
         if self.user_id:
             request = self.env["res.request"]
-            if not self.report.field_list:
-                self.report.field_list.append("No exception.")
+            if not self.report:
+                new_message = message_obj.create({'message': "No exception."})
+                self.report = new_message
             summary = """Here is the synchronization report:
 
      Synchronization started: %s
      Synchronization finished: %s
-    
+
      Synchronized records: %d
      Records updated: %d
      Records created: %d
-    
+
      Exceptions:
         """ % (
                 start_date,
@@ -330,7 +333,8 @@ class BaseSynchro(models.TransientModel):
                 self.report_write,
                 self.report_create,
             )
-            summary += "\n".join(self.report.field_list)
+            for rep in self.report.mapped(lambda x: x.message):
+                summary += rep
             request.create(
                 {
                     "name": "Synchronization report",
